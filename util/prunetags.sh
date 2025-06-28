@@ -26,13 +26,22 @@ for TAG in ${TAGS[@]}; do
     fi
 done
 
-for TAG in ${LATEST_TAGS[@]} ${MONTHLY_TAGS[@]}; do
+# Silinecek olanları çıkar
+for TAG in "${LATEST_TAGS[@]}" "${MONTHLY_TAGS[@]}"; do
     TAGS=( "${TAGS[@]/$TAG}" )
 done
 
-for TAG in ${TAGS[@]}; do
-    echo "Deleting ${TAG}"
-    gh release delete --cleanup-tag --yes "${TAG}"
+# Kalan tag'lar üzerinden ilerle
+for TAG in "${TAGS[@]}"; do
+    echo "Checking $TAG..."
+
+    if gh release view "$TAG" &>/dev/null; then
+        echo "Deleting release and tag $TAG"
+        gh release delete --cleanup-tag --yes "$TAG"
+    else
+        echo "No release found for $TAG, skipping delete"
+        git tag -d "$TAG"  # Optional: sadece local tag'i silmek için
+    fi
 done
 
 git push --tags --prune
